@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PM Job Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1EE; --panel: #FFFFFF; --ink: #18211C; --muted: #5F6B64; --line: #D9DFDA;
+  --accent: #3A47B8; --accent-ink: #FFFFFF; --accent-soft: #E6E8F8;
+  --wa: #1E8A57; --li: #0A66C2; --you: #8A5A12; --danger: #B3261E;
+  --sel: #E3E9F7; --hover: #F4F6F4;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121714; --panel: #1A201C; --ink: #E6ECE8; --muted: #9AA69F; --line: #2C3530;
+    --accent: #8C97F0; --accent-ink: #11152E; --accent-soft: #262B4D;
+    --wa: #4CC48A; --li: #5AA3EA; --you: #E0B062; --danger: #F2847C;
+    --sel: #232A3F; --hover: #202722;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font: 15px/1.45 "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg); color: var(--ink); display: flex; flex-direction: column;
+  font-variant-numeric: tabular-nums;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Top bar */
+header { display: flex; align-items: center; gap: 20px; padding: 14px 24px; flex-wrap: wrap; }
+h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.health { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 4px 10px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.chip.ok i { background: var(--wa); } .chip.warn i { background: #D08A00; } .chip.err i { background: var(--danger); }
+button.chip { cursor: pointer; }
+
+.btn { text-decoration: none; display: inline-flex; align-items: center; border: 1px solid var(--line); background: var(--panel); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--hover); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+
+/* Tabs + filters */
+.bar { display: flex; align-items: center; gap: 16px; padding: 0 24px 12px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.tabs button { border: 0; background: none; padding: 6px 12px; border-radius: 7px; cursor: pointer; color: var(--muted); font-weight: 500; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--panel); }
+.tabs .n { opacity: .7; margin-left: 4px; font-size: 13px; }
+.bar input, .bar select { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.bar input { width: 220px; }
+.bar .spacer { flex: 1; }
+
+/* Main split */
+main { flex: 1; display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 0; min-height: 0;
+  margin: 0 24px 24px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+#list { overflow-y: auto; border-right: 1px solid var(--line); }
+.row { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 12px 16px 12px 14px;
+  border-bottom: 1px solid var(--line); border-left: 3px solid transparent; cursor: pointer; }
+.row:hover { background: var(--hover); }
+.row[aria-current="true"] { background: var(--sel); border-left-color: var(--accent); }
+.row .t { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .c { color: var(--muted); font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .m { display: flex; gap: 10px; align-items: center; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.src { font-weight: 600; }
+.src.whatsapp { color: var(--wa); } .src.linkedin { color: var(--li); } .src.manual { color: var(--you); }
+.fit { display: inline-flex; gap: 2px; margin-left: auto; } .fit b { width: 4px; height: 10px; border-radius: 1px; background: var(--line); }
+.fit b.on { background: var(--ink); opacity: .75; }
+.empty { padding: 40px 24px; color: var(--muted); }
+.empty strong { color: var(--ink); display: block; margin-bottom: 6px; font-size: 16px; }
+.keys { padding: 10px 16px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); position: sticky; bottom: 0; background: var(--panel); }
+kbd { font: inherit; font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+
+/* Detail */
+#detail { overflow-y: auto; padding: 28px 36px 48px; }
+#detail h2 { font-size: 26px; line-height: 1.2; margin: 0 0 4px; letter-spacing: -0.015em; font-weight: 700; max-width: 30ch; }
+.company { font-size: 17px; margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 26px; }
+.status-note { font-size: 13px; color: var(--muted); align-self: center; margin-left: 4px; }
+section { margin-bottom: 28px; max-width: 72ch; }
+section h3 { font-size: 15px; margin: 0 0 8px; font-weight: 600; }
+.post { white-space: pre-wrap; background: var(--bg); border-radius: 8px; padding: 14px 16px; font-size: 14.5px; max-height: 340px; overflow: auto; overflow-wrap: anywhere; }
+.summary { margin: 0 0 10px; }
+.channels { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.channels button { border: 1px solid var(--line); background: var(--panel); padding: 5px 12px; border-radius: 999px; cursor: pointer; font-size: 14px; }
+.channels button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.channels button:disabled { opacity: .4; cursor: not-allowed; }
+textarea { width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; resize: vertical; }
+#msg { min-height: 150px; }
+.composer-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.count { font-size: 13px; color: var(--muted); margin-right: auto; }
+.count.over { color: var(--danger); font-weight: 600; }
+.contact { font-size: 14px; color: var(--muted); margin: 0 0 10px; overflow-wrap: anywhere; }
+.contact a { color: var(--accent); }
+.placeholder { color: var(--muted); padding-top: 60px; text-align: center; }
+
+/* Toast + dialogs */
+#toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0;
+  background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 8px; transition: .2s; pointer-events: none; max-width: 90vw; z-index: 20; }
+#toast.show { opacity: 1; transform: translateX(-50%); }
+#toast.err { background: var(--danger); color: #fff; }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 24px; width: min(520px, 92vw); }
+dialog::backdrop { background: rgba(10, 15, 12, .45); }
+dialog h2 { margin: 0 0 6px; font-size: 20px; }
+dialog p { color: var(--muted); margin: 0 0 14px; }
+dialog label { display: block; font-weight: 500; margin: 12px 0 4px; font-size: 14px; }
+dialog input { width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+dialog .foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+#qrImg { display: block; margin: 8px auto; width: 260px; height: 260px; background: #fff; padding: 8px; border-radius: 8px; }
+.bm { display: inline-block; padding: 6px 12px; border: 1px dashed var(--accent); border-radius: 8px; color: var(--accent); text-decoration: none; font-weight: 600; }
+
+@media (max-width: 860px) {
+  header, .bar { padding-left: 14px; padding-right: 14px; }
+  main { grid-template-columns: 1fr; margin: 0 0 0; border-radius: 0; border-left: 0; border-right: 0; }
+  #list { border-right: 0; }
+  #detail { position: fixed; inset: 0; z-index: 10; background: var(--panel); padding: 20px; display: none; }
+  body.reading #detail { display: block; }
+  .back { display: inline-flex !important; margin-bottom: 14px; }
+  .bar input { width: 100%; }
+  .keys { display: none; }
+}
+.back { display: none; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>PM Job Radar</h1>
+  <div class="health" id="health" aria-live="polite"></div>
+</header>
+
+<div class="bar">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <input id="q" type="search" placeholder="Search title, company, city" aria-label="Search jobs">
+  <select id="source" aria-label="Filter by source">
+    <option value="all">All sources</option>
+    <option value="whatsapp">WhatsApp</option>
+    <option value="linkedin">LinkedIn</option>
+    <option value="manual">Added by you</option>
+  </select>
+  <span class="spacer"></span>
+  <button class="btn" id="syncBtn">Check for new jobs</button>
+  <button class="btn primary" id="addBtn">Add a job</button>
+</div>
+
+<main>
+  <div id="list" role="list"></div>
+  <article id="detail"><p class="placeholder">Pick a job on the left.</p></article>
+</main>
+
+<div id="toast" role="status"></div>
+
+<dialog id="qrDlg">
+  <h2>Connect WhatsApp</h2>
+  <p>On your phone open WhatsApp, go to Settings › Linked devices › Link a device, and scan this code.</p>
+  <img id="qrImg" alt="WhatsApp pairing QR code">
+  <div class="foot"><button class="btn" data-close>Close</button></div>
+</dialog>
+
+<dialog id="addDlg">
+  <form id="addForm">
+    <h2>Add a job</h2>
+    <p>Paste a LinkedIn post, a job link, or a message someone forwarded you.</p>
+    <label for="addText">Post text</label>
+    <textarea id="addText" rows="6"></textarea>
+    <label for="addUrl">Link (optional)</label>
+    <input id="addUrl" type="url" placeholder="https://www.linkedin.com/...">
+    <label>Save from any page</label>
+    <p style="margin:0 0 6px">Drag this to your bookmarks bar. On a LinkedIn post, select the text and click it.</p>
+    <a class="bm" id="bookmarklet" href="#">Save to Job Radar</a>
+    <div class="foot">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button class="btn primary" type="submit">Add job</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const STATUSES = [['new','New'],['saved','Saved'],['applied','Applied'],['messaged','Messaged'],['archived','Archived'],['all','All']];
+const LIMITS = { whatsapp: 600, linkedin: 300, email: 1200 };
+const state = { status: 'new', source: 'all', q: '', jobs: [], counts: {}, current: null, job: null, channel: 'whatsapp', sys: null };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { headers: { 'content-type': 'application/json' }, ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+function toast(msg, err = false) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', err ? 5000 : 2200);
+}
+function ago(iso) {
+  if (!iso) return '';
+  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z');
+  const m = Math.round((Date.now() - d) / 60000);
+  if (m < 60) return `${Math.max(m, 1)}m ago`;
+  if (m < 1440) return `${Math.round(m / 60)}h ago`;
+  return `${Math.round(m / 1440)}d ago`;
+}
+const srcLabel = j => j.source === 'whatsapp' ? 'WhatsApp' : j.source.startsWith('linkedin') ? 'LinkedIn' : 'Added by you';
+const srcClass = j => j.source === 'whatsapp' ? 'whatsapp' : j.source.startsWith('linkedin') ? 'linkedin' : 'manual';
+
+/* ---------- Tabs ---------- */
+function renderTabs() {
+  $('#tabs').innerHTML = STATUSES.map(([k, label]) =>
+    `<button role="tab" aria-selected="${state.status === k}" data-s="${k}">${label}<span class="n">${state.counts[k] ?? 0}</span></button>`).join('');
+}
+$('#tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; state.status = b.dataset.s; loadJobs(true); };
+
+/* ---------- List ---------- */
+async function loadJobs(resetSelection = false) {
+  const qs = new URLSearchParams({ status: state.status, source: state.source, q: state.q });
+  const data = await api('/api/jobs?' + qs);
+  state.jobs = data.jobs; state.counts = data.counts;
+  renderTabs(); renderList();
+  if (resetSelection || !state.jobs.some(j => j.id === state.current)) {
+    if (state.jobs[0] && window.innerWidth > 860) select(state.jobs[0].id); else if (!state.jobs.length) renderDetail(null);
+  }
+}
+function renderList() {
+  const list = $('#list');
+  if (!state.jobs.length) {
+    const msg = state.status === 'new'
+      ? '<strong>You’re all caught up</strong>New PM posts from your WhatsApp groups and LinkedIn alerts will show up here.'
+      : '<strong>Nothing here yet</strong>Jobs you move to this list will show up here.';
+    list.innerHTML = `<div class="empty">${msg}</div>`; return;
+  }
+  list.innerHTML = state.jobs.map(j => {
+    const bars = Math.round((j.score || 0) / 20);
+    return `<button class="row" role="listitem" data-id="${j.id}" aria-current="${j.id === state.current}">
+      <span class="t">${esc(j.title || 'Product role')}</span>
+      <span class="c">${esc([j.company, j.location].filter(Boolean).join(', ') || 'Company not stated')}</span>
+      <span class="m"><span class="src ${srcClass(j)}">${srcLabel(j)}</span>
+        <span>${esc(j.source === 'whatsapp' ? j.source_detail || '' : '')}</span>
+        <span>${ago(j.posted_at || j.found_at)}</span>
+        <span class="fit" title="Match ${j.score}/100">${[1,2,3,4,5].map(i => `<b class="${i <= bars ? 'on' : ''}"></b>`).join('')}</span>
+      </span></button>`;
+  }).join('') + `<div class="keys"><kbd>j</kbd> <kbd>k</kbd> move  <kbd>s</kbd> save  <kbd>a</kbd> applied  <kbd>x</kbd> archive  <kbd>o</kbd> open posting  <kbd>r</kbd> reply</div>`;
+}
+$('#list').onclick = e => { const r = e.target.closest('.row'); if (r) select(r.dataset.id); };
+
+/* ---------- Detail ---------- */
+async function select(id) {
+  state.current = id;
+  document.querySelectorAll('.row').forEach(r => r.setAttribute('aria-current', r.dataset.id === id));
+  document.querySelector(`.row[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
+  state.job = await api('/api/jobs/' + id);
+  const j = state.job;
+  state.channel = j.contact_phone ? 'whatsapp' : j.contact_email ? 'email' : 'linkedin';
+  renderDetail(j);
+  document.body.classList.add('reading');
+}
+function channelsFor(j) {
+  return [
+    ['whatsapp', 'WhatsApp', !!j.contact_phone],
+    ['linkedin', 'LinkedIn note', true],
+    ['email', 'Email', !!j.contact_email],
+  ];
+}
+function renderDetail(j) {
+  const d = $('#detail');
+  if (!j) { d.innerHTML = '<p class="placeholder">Pick a job on the left.</p>'; return; }
+  const statusNote = j.status === 'applied' ? `Applied ${ago(j.applied_at)}` : j.status === 'messaged' ? `Messaged ${ago(j.messaged_at)}` : '';
+  const contactBits = [
+    j.contact_name && esc(j.contact_name),
+    j.contact_phone && `+${esc(j.contact_phone)}`,
+    j.contact_email && `<a href="mailto:${esc(j.contact_email)}">${esc(j.contact_email)}</a>`,
+    j.contact_linkedin && `<a href="${esc(j.contact_linkedin)}" target="_blank" rel="noopener">LinkedIn profile</a>`,
+  ].filter(Boolean);
+  d.innerHTML = `
+    <button class="btn small back" id="backBtn">Back to list</button>
+    <h2>${esc(j.title || 'Product role')}</h2>
+    <p class="company">${esc(j.company || 'Company not stated')}</p>
+    <div class="meta">
+      ${j.location ? `<span>${esc(j.location)}</span>` : ''}
+      ${j.experience ? `<span>${esc(j.experience)}</span>` : ''}
+      <span class="src ${srcClass(j)}">${srcLabel(j)}${j.source_detail ? ': ' + esc(j.source_detail) : ''}</span>
+      <span>${ago(j.posted_at || j.found_at)}</span>
+    </div>
+    <div class="actions">
+      ${j.url ? `<a class="btn primary" href="${esc(j.url)}" target="_blank" rel="noopener" id="openBtn">Open posting</a>` : ''}
+      <button class="btn" data-set="applied">Mark applied</button>
+      <button class="btn" data-set="saved">${j.status === 'saved' ? 'Saved' : 'Save'}</button>
+      <button class="btn" data-set="${j.status === 'archived' ? 'new' : 'archived'}">${j.status === 'archived' ? 'Move to New' : 'Archive'}</button>
+      ${statusNote ? `<span class="status-note">${statusNote}</span>` : ''}
+    </div>
+
+    <section>
+      <h3>Reach out</h3>
+      ${contactBits.length ? `<p class="contact">${contactBits.join('<span aria-hidden="true">  /  </span>')}</p>` : '<p class="contact">No contact in the post. A LinkedIn note to the poster or hiring team is your best route.</p>'}
+      <div class="channels" id="channels">${channelsFor(j).map(([k, label, ok]) =>
+        `<button data-ch="${k}" aria-pressed="${state.channel === k}" ${ok ? '' : 'disabled title="No contact for this channel"'}>${label}</button>`).join('')}</div>
+      <textarea id="msg" aria-label="Message">${esc(j.draft || '')}</textarea>
+      <div class="composer-foot">
+        <span class="count" id="count"></span>
+        <button class="btn" id="draftBtn">${j.draft ? 'Rewrite draft' : 'Write a draft'}</button>
+        <button class="btn primary" id="sendBtn"></button>
+      </div>
+    </section>
+
+    ${j.summary ? `<section><h3>Summary</h3><p class="summary">${esc(j.summary)}</p></section>` : ''}
+    <section><h3>Original post</h3><div class="post">${esc(j.raw_text || '')}</div></section>
+    <section><h3>Notes</h3><textarea id="notes" rows="3" placeholder="Referral from…, interview on…">${esc(j.notes || '')}</textarea></section>`;
+  updateComposer();
+}
+function updateComposer() {
+  const msg = $('#msg'); if (!msg) return;
+  const n = msg.value.length, lim = LIMITS[state.channel];
+  const c = $('#count'); c.textContent = `${n} / ${lim}`; c.classList.toggle('over', n > lim);
+  $('#sendBtn').textContent = { whatsapp: 'Send on WhatsApp', linkedin: 'Copy and open LinkedIn', email: 'Open in email' }[state.channel];
+  document.querySelectorAll('#channels button').forEach(b => b.setAttribute('aria-pressed', b.dataset.ch === state.channel));
+}
+
+$('#detail').addEventListener('input', e => { if (e.target.id === 'msg') updateComposer(); });
+$('#detail').addEventListener('change', async e => {
+  if (e.target.id === 'notes') { await api('/api/jobs/' + state.current, { method: 'PATCH', body: { notes: e.target.value } }); toast('Notes saved'); }
+  if (e.target.id === 'msg') api('/api/jobs/' + state.current, { method: 'PATCH', body: { draft: e.target.value } });
+});
+$('#detail').addEventListener('click', async e => {
+  const t = e.target.closest('button, a'); if (!t) return;
+  const j = state.job;
+  if (t.id === 'backBtn') { document.body.classList.remove('reading'); return; }
+  if (t.dataset.set) return setStatus(t.dataset.set);
+  if (t.dataset.ch && !t.disabled) { state.channel = t.dataset.ch; updateComposer(); return; }
+  if (t.id === 'openBtn' && j.status === 'new') setStatus('saved', true);
+  if (t.id === 'draftBtn') {
+    t.disabled = true; t.textContent = 'Writing…';
+    try { const r = await api(`/api/jobs/${j.id}/draft`, { method: 'POST', body: { channel: state.channel } });
+      $('#msg').value = r.text; j.draft = r.text; updateComposer(); }
+    catch (err) { toast(err.message, true); }
+    t.disabled = false; t.textContent = 'Rewrite draft';
+  }
+  if (t.id === 'sendBtn') send();
+});
+
+async function setStatus(status, quiet = false) {
+  const id = state.current;
+  await api('/api/jobs/' + id, { method: 'PATCH', body: { status } });
+  if (!quiet) toast({ applied: 'Marked applied', saved: 'Saved', archived: 'Archived', new: 'Moved to New', messaged: 'Marked messaged' }[status]);
+  const idx = state.jobs.findIndex(x => x.id === id);
+  await loadJobs();
+  if (state.status !== 'all' && state.status !== status) {
+    const next = state.jobs[Math.min(idx, state.jobs.length - 1)];
+    next ? select(next.id) : renderDetail(null);
+  } else select(id);
+}
+
+async function send() {
+  const j = state.job, text = $('#msg').value.trim();
+  if (!text) return toast('Write a message first, or click “Write a draft”.', true);
+  if (state.channel === 'whatsapp') {
+    if (!confirm(`Send this message to +${j.contact_phone} on WhatsApp?`)) return;
+    const b = $('#sendBtn'); b.disabled = true; b.textContent = 'Sending…';
+    try { await api(`/api/jobs/${j.id}/send-whatsapp`, { method: 'POST', body: { text } }); toast('Sent on WhatsApp'); await loadJobs(); select(j.id); }
+    catch (err) { toast(err.message, true); b.disabled = false; updateComposer(); }
+  } else if (state.channel === 'linkedin') {
+    await navigator.clipboard.writeText(text).catch(() => {});
+    window.open(j.contact_linkedin || j.url || 'https://www.linkedin.com/messaging/', '_blank', 'noopener');
+    toast('Message copied. Paste it into LinkedIn.');
+    await api('/api/jobs/' + j.id, { method: 'PATCH', body: { status: 'messaged', draft: text } });
+    loadJobs();
+  } else {
+    let subject = `${j.title || 'Product Manager'} role`, body = text;
+    const m = text.match(/^Subject:\s*(.+)\n+/i); if (m) { subject = m[1]; body = text.slice(m[0].length); }
+    location.href = `mailto:${encodeURIComponent(j.contact_email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    await api('/api/jobs/' + j.id, { method: 'PATCH', body: { status: 'messaged', draft: text } });
+    loadJobs();
+  }
+}
+
+/* ---------- Source health ---------- */
+async function loadStatus() {
+  const s = state.sys = await api('/api/status');
+  const wa = s.whatsapp, chips = [];
+  const waText = { off: 'WhatsApp off', starting: 'WhatsApp starting', connecting: 'WhatsApp connecting', needs_qr: 'Connect WhatsApp',
+    connected: `WhatsApp: ${wa.groups.filter(g => g.watched).length} groups`, disconnected: 'WhatsApp disconnected', error: 'WhatsApp problem' }[wa.status];
+  const waCls = wa.status === 'connected' ? 'ok' : wa.status === 'off' ? '' : ['needs_qr','starting','connecting'].includes(wa.status) ? 'warn' : 'err';
+  chips.push(`<button class="chip ${waCls}" id="waChip" title="${esc(wa.error || '')}"><i></i>${waText}</button>`);
+  for (const [key, label] of [['linkedinEmail', 'LinkedIn alerts'], ['linkedinPublic', 'LinkedIn search']]) {
+    const x = s[key]; if (x.status === 'off' && key === 'linkedinPublic') continue;
+    const cls = x.status === 'ok' ? 'ok' : x.status === 'error' ? 'err' : x.status === 'off' ? '' : 'warn';
+    const txt = x.status === 'off' ? `${label} off` : x.status === 'error' ? `${label} problem` : x.lastRun ? `${label}: checked ${ago(x.lastRun)}` : `${label}: waiting`;
+    chips.push(`<span class="chip ${cls}" title="${esc(x.error || '')}"><i></i>${txt}</span>`);
+  }
+  chips.push(`<span class="chip ${s.ai ? 'ok' : ''}" title="${s.ai ? '' : 'Add ANTHROPIC_API_KEY to .env for smarter parsing and drafts'}"><i></i>${s.ai ? 'AI drafts on' : 'AI drafts off'}</span>`);
+  $('#health').innerHTML = chips.join('');
+  if (wa.status === 'needs_qr' && wa.qr) { $('#qrImg').src = wa.qr; }
+  if (wa.status === 'connected' && $('#qrDlg').open) { $('#qrDlg').close(); toast('WhatsApp connected. Scanning your groups.'); }
+}
+$('#health').onclick = e => {
+  if (e.target.closest('#waChip')) {
+    const wa = state.sys.whatsapp;
+    if (wa.status === 'needs_qr') $('#qrDlg').showModal();
+    else if (wa.error) toast(wa.error, true);
+  }
+};
+
+/* ---------- Toolbar ---------- */
+let qTimer;
+$('#q').oninput = e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value; loadJobs(true); }, 250); };
+$('#source').onchange = e => { state.source = e.target.value; loadJobs(true); };
+$('#syncBtn').onclick = async e => {
+  const b = e.target; b.disabled = true; b.textContent = 'Checking…';
+  try { const r = await api('/api/sync', { method: 'POST' });
+    const n = (r.email?.added || 0) + (r.public?.added || 0);
+    toast(n ? `${n} new job${n > 1 ? 's' : ''} from LinkedIn` : 'No new LinkedIn jobs. WhatsApp updates live.'); await loadJobs(); loadStatus(); }
+  catch (err) { toast(err.message, true); }
+  b.disabled = false; b.textContent = 'Check for new jobs';
+};
+$('#addBtn').onclick = () => $('#addDlg').showModal();
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+$('#addForm').onsubmit = async e => {
+  e.preventDefault();
+  try { const r = await api('/api/jobs', { method: 'POST', body: { text: $('#addText').value, url: $('#addUrl').value } });
+    $('#addDlg').close(); $('#addForm').reset(); toast(r.inserted ? 'Job added' : 'You already have this job');
+    state.status = 'all'; await loadJobs(); select(r.id); }
+  catch (err) { toast(err.message, true); }
+};
+$('#bookmarklet').href = `javascript:(()=>{const s=String(getSelection()).trim();window.open('${location.origin}/add.html?url='+encodeURIComponent(location.href)+'&text='+encodeURIComponent((s||document.title).slice(0,6000)),'_blank')})()`;
+$('#bookmarklet').onclick = e => { e.preventDefault(); toast('Drag this link to your bookmarks bar.'); };
+
+/* ---------- Keyboard ---------- */
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey || document.querySelector('dialog[open]')) return;
+  const i = state.jobs.findIndex(j => j.id === state.current);
+  if (e.key === 'j' && state.jobs[i + 1]) select(state.jobs[i + 1].id);
+  else if (e.key === 'k' && i > 0) select(state.jobs[i - 1].id);
+  else if (!state.current) return;
+  else if (e.key === 's') setStatus('saved');
+  else if (e.key === 'a') setStatus('applied');
+  else if (e.key === 'x') setStatus('archived');
+  else if (e.key === 'o' && state.job?.url) $('#openBtn')?.click();
+  else if (e.key === 'r') { e.preventDefault(); $('#msg')?.focus(); }
+});
+
+/* ---------- Boot ---------- */
+(async () => {
+  await Promise.all([loadJobs(true), loadStatus()]);
+  const want = new URLSearchParams(location.search).get('job');
+  if (want) { state.status = 'all'; await loadJobs(); select(want); history.replaceState(null, '', '/'); }
+  setInterval(loadStatus, 5000);
+  setInterval(() => loadJobs(), 30000);
+})();
+</script>
+</body>
+</html>

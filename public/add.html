@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Save to PM Job Radar</title>
+<style>
+:root { --bg:#EEF1EE; --panel:#fff; --ink:#18211C; --muted:#5F6B64; --line:#D9DFDA; --accent:#3A47B8; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg:#121714; --panel:#1A201C; --ink:#E6ECE8; --muted:#9AA69F; --line:#2C3530; --accent:#8C97F0; color-scheme: dark; } }
+body { font: 15px/1.45 "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding: 32px 16px; }
+form { max-width: 560px; margin: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+h1 { font-size: 20px; margin: 0 0 4px; } p { color: var(--muted); margin: 0 0 14px; }
+label { display: block; font-weight: 500; margin: 12px 0 4px; font-size: 14px; }
+input, textarea { width: 100%; box-sizing: border-box; font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+button { margin-top: 16px; font: inherit; font-weight: 600; background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+</style></head>
+<body>
+<form method="post" action="/api/jobs">
+  <h1>Save this job</h1>
+  <p>Check the details, then save. It goes straight into your New list.</p>
+  <label for="title">Role (optional)</label><input id="title" name="title" placeholder="Senior Product Manager">
+  <label for="company">Company (optional)</label><input id="company" name="company">
+  <label for="url">Link</label><input id="url" name="url">
+  <label for="text">Post text</label><textarea id="text" name="text" rows="10"></textarea>
+  <button type="submit">Save job</button>
+</form>
+<script>
+const p = new URLSearchParams(location.search);
+document.getElementById('url').value = p.get('url') || '';
+document.getElementById('text').value = p.get('text') || '';
+</script>
+</body></html>
